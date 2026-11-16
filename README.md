@@ -7,6 +7,8 @@ It also gives you a risk score and explains **why** in plain English.
 
 > 🔒 The URL is analysed as text only and is never opened, so checking a dangerous link is safe.
 
+![PhishGuard web app flagging a fake PayPal link as phishing, with the reasons and model stats](docs/screenshot.png)
+
 ---
 
 ## ✨ Features
@@ -18,6 +20,7 @@ It also gives you a risk score and explains **why** in plain English.
 - **Comparison of 3 ML models**: Logistic Regression, Decision Tree and Random Forest
 - **Explainable AI**: every verdict comes with human-readable reasons, each with a severity level
 - **Web dashboard (Flask)**, **REST API** and **command-line tool**
+- **Shareable check links**: `http://127.0.0.1:5000/?url=<link>` checks that link automatically
 - **Secure by design**: XSS-safe rendering and input length limits; URLs are never fetched
 
 ---

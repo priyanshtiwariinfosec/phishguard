@@ -204,6 +204,10 @@
   }));
 
   fetch("/api/stats").then(r => r.json()).then(d => renderHistory(d.history)).catch(() => {});
+
+  // Shareable links: http://127.0.0.1:5000/?url=<link> checks that link automatically
+  const shared = new URLSearchParams(location.search).get("url");
+  if (shared) { $("url").value = shared.slice(0, 2000); $("form").requestSubmit(); }
 </script>
 </body>
 </html>
