@@ -7,6 +7,9 @@ It also gives you a risk score and explains **why** in plain English.
 
 > 🔒 The URL is analysed as text only and is never opened, so checking a dangerous link is safe.
 
+### 🌐 [Try the live demo →](https://priyanshtiwariinfosec.github.io/phishguard/)
+It runs 100% in your browser, with nothing to install, and no URL is ever sent anywhere.
+
 ![PhishGuard web app flagging a fake PayPal link as phishing, with the reasons and model stats](docs/screenshot.png)
 
 ---
@@ -20,7 +23,8 @@ It also gives you a risk score and explains **why** in plain English.
 - **Comparison of 3 ML models**: Logistic Regression, Decision Tree and Random Forest
 - **Explainable AI**: every verdict comes with human-readable reasons, each with a severity level
 - **Web dashboard (Flask)**, **REST API** and **command-line tool**
-- **Shareable check links**: `http://127.0.0.1:5000/?url=<link>` checks that link automatically
+- **Live browser demo (GitHub Pages)**: a JavaScript port of the feature extractor runs a compact 40-tree model client-side. It's verified to produce identical features on 3,041 test URLs.
+- **Shareable check links**: `?url=<link>` checks that link automatically (in both the web app and the live demo)
 - **Secure by design**: XSS-safe rendering and input length limits; URLs are never fetched
 
 ---
@@ -66,6 +70,8 @@ phishing-url-detector/
 ├── train.py                  # trains & compares 3 models, runs the real-world check, saves the best
 ├── predict.py                # hybrid detector (allowlist + ML), command-line checker
 ├── app.py                    # Flask web app + REST API
+├── export_web_model.py       # trains + exports the compact model for the live demo
+├── docs/                     # live demo (GitHub Pages): index.html, phishguard.js, model.json
 ├── templates/index.html      # web dashboard
 ├── requirements.txt
 ├── model/                    # final trained model + metrics.json (included)
@@ -172,6 +178,19 @@ Final model comparison on the debiased data (47,074 test URLs the model never sa
 **Independent check.** On 16 brand-new URLs that were never used while tuning, the ML model alone got 15/16 right. The one miss was `web.whatsapp.com`, which the allowlist layer now handles.
 
 > Note: the 30-URL real-world check was also used while developing the debiasing steps, so treat it as a development check, not a fully independent test.
+
+---
+
+### 🌐 Live demo model
+
+The browser demo uses a compact Random Forest (40 trees, depth 12, 1.1 MB) trained on the same debiased data and split:
+
+| Model | Size | Accuracy | Precision | Recall | Real-world check |
+|---|---|---|---|---|---|
+| Full model (Python app) | 33 MB | 93.96% | 93.41% | 92.39% | 30/30 |
+| Compact model (live demo) | 1.1 MB | 92.65% | 93.37% | 89.12% | 30/30 |
+
+`docs/phishguard.js` re-implements the feature extractor in JavaScript. It mimics Python's `urlparse`, code-point string lengths, round-half-to-even and scikit-learn's float32 comparisons. On 3,041 test URLs, all 22 features were identical to Python's, the probabilities differed by less than 0.000002, and all 434 explanations matched exactly. Run `python export_web_model.py --fixture docs/parity_fixture.json` to regenerate the parity test data.
 
 ---
 
