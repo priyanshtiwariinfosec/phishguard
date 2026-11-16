@@ -1,0 +1,64 @@
+{
+  "best_model": "Random Forest",
+  "dataset": "data/real_urls.csv",
+  "train_size": 188296,
+  "test_size": 47074,
+  "results": {
+    "Logistic Regression": {
+      "accuracy": 0.8478140799592132,
+      "precision": 0.835337410593967,
+      "recall": 0.8016812574612018,
+      "f1": 0.8181633585461191,
+      "confusion_matrix": [
+        [
+          23793,
+          3177
+        ],
+        [
+          3987,
+          16117
+        ]
+      ]
+    },
+    "Decision Tree": {
+      "accuracy": 0.9171517185707609,
+      "precision": 0.9211018711018711,
+      "recall": 0.881516116195782,
+      "f1": 0.9008743391622611,
+      "confusion_matrix": [
+        [
+          25452,
+          1518
+        ],
+        [
+          2382,
+          17722
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 0.939648213451162,
+      "precision": 0.9340709077193865,
+      "recall": 0.9238957421408674,
+      "f1": 0.9289554627522568,
+      "confusion_matrix": [
+        [
+          25659,
+          1311
+        ],
+        [
+          1530,
+          18574
+        ]
+      ]
+    }
+  },
+  "real_world_check": {
+    "correct": 29,
+    "total": 30,
+    "false_alarms": [
+      "https://www.onlinesbi.sbi/"
+    ],
+    "missed": []
+  }
+}

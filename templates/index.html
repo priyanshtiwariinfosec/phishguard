@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhishGuard - Phishing URL Detector</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --card: #ffffff; --text: #1a2233; --muted: #667085; --border: #e3e7ef;
+    --accent: #3b5bdb; --safe: #12b76a; --warn: #f79009; --danger: #e5383b;
+    --safe-bg: #ecfdf3; --warn-bg: #fffaeb; --danger-bg: #fef3f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --card: #161b22; --text: #e6edf3; --muted: #8b949e; --border: #30363d;
+      --accent: #6e8bff; --safe-bg: #0f2a1c; --warn-bg: #2d220c; --danger-bg: #2d1214;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 48px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .logo { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; color: #fff; font-size: 22px; }
+  h1 { font-size: 26px; margin: 0; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  form { display: flex; gap: 10px; flex-wrap: wrap; }
+  input[type=text] { flex: 1 1 320px; min-width: 0; padding: 13px 14px; font-size: 15px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  input[type=text]:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  button { padding: 13px 22px; font-size: 15px; font-weight: 600; border: 0; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: wait; }
+  .examples { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+  .chip { background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px; cursor: pointer; color: var(--text); font-size: 12.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  #result { display: none; }
+  .verdict { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; border-radius: 12px; padding: 18px; }
+  .verdict.SAFE { background: var(--safe-bg); } .verdict.SUSPICIOUS { background: var(--warn-bg); } .verdict.PHISHING { background: var(--danger-bg); }
+  .badge { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
+  .SAFE .badge { color: var(--safe); } .SUSPICIOUS .badge { color: var(--warn); } .PHISHING .badge { color: var(--danger); }
+  .checked-url { word-break: break-all; font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+  .meter { flex: 1 1 220px; }
+  .meter-bar { height: 12px; border-radius: 6px; background: var(--border); overflow: hidden; }
+  .meter-fill { height: 100%; width: 0; border-radius: 6px; transition: width .6s ease; }
+  .meter-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: var(--muted); }
+  .meter-label b { color: var(--text); }
+  h2 { font-size: 15px; margin: 20px 0 10px; }
+  ul.reasons { list-style: none; padding: 0; margin: 0; }
+  ul.reasons li { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  ul.reasons li:last-child { border-bottom: 0; }
+  .lvl { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; flex-shrink: 0; margin-top: 1px; }
+  .lvl.high { background: var(--danger-bg); color: var(--danger); }
+  .lvl.medium { background: var(--warn-bg); color: var(--warn); }
+  .lvl.low { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .lvl.info { background: var(--safe-bg); color: var(--safe); }
+  details summary { cursor: pointer; font-size: 14px; color: var(--accent); margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td:last-child { text-align: right; font-family: Consolas, monospace; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .stat { background: var(--bg); border-radius: 10px; padding: 12px; }
+  .stat .v { font-size: 22px; font-weight: 700; }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .hist-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .hist-row:last-child { border-bottom: 0; }
+  .hist-url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .error { color: var(--danger); font-size: 14px; margin-top: 10px; }
+  .empty { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="logo">&#128737;</div><h1>PhishGuard</h1></header>
+  <p class="sub">AI-powered phishing URL detector &middot; trained on 235,000+ real URLs (PhiUSIIL dataset, UCI 2024)</p>
+
+  <div class="card">
+    <form id="form">
+      <input id="url" type="text" placeholder="Paste a URL to check, e.g. http://paypal.com.secure-login.xyz/verify" autocomplete="off" spellcheck="false">
+      <button id="btn" type="submit">Check URL</button>
+    </form>
+    <div class="examples">Try:
+      <span class="chip">https://github.com/login</span>
+      <span class="chip">http://paypal.com.verify-account.xyz/signin</span>
+      <span class="chip">http://192.168.45.10:8080/sbi/kyc-update.php</span>
+      <span class="chip">https://amaz0n-billing.top/confirm</span>
+      <span class="chip">https://www.wikipedia.org/wiki/Phishing</span>
+    </div>
+    <div class="note">&#128274; Safe to use: the URL is analysed as text only and is never opened.</div>
+    <div id="error" class="error"></div>
+  </div>
+
+  <div id="result" class="card">
+    <div id="verdict" class="verdict">
+      <div>
+        <div class="badge" id="badge"></div>
+        <div class="checked-url" id="checked-url"></div>
+      </div>
+      <div class="meter">
+        <div class="meter-label"><span>Phishing risk</span><b id="risk"></b></div>
+        <div class="meter-bar"><div class="meter-fill" id="fill"></div></div>
+      </div>
+    </div>
+    <h2>Why?</h2>
+    <ul class="reasons" id="reasons"></ul>
+    <details>
+      <summary>Show the 22 features the AI looked at</summary>
+      <table id="features"></table>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Model performance</h2>
+    {% if metrics %}
+    <div class="grid">
+      <div class="stat"><div class="v">{{ metrics.accuracy }}%</div><div class="k">Accuracy</div></div>
+      <div class="stat"><div class="v">{{ metrics.precision }}%</div><div class="k">Precision</div></div>
+      <div class="stat"><div class="v">{{ metrics.recall }}%</div><div class="k">Recall</div></div>
+      <div class="stat"><div class="v">{{ metrics.trained_on }}</div><div class="k">URLs in dataset</div></div>
+    </div>
+    <div class="note">Model: {{ metrics.model }} (best of 3 compared models)</div>
+    {% else %}
+    <div class="empty">No metrics found - run train.py</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Recent checks</h2>
+    <div id="history"><div class="empty">No URLs checked yet.</div></div>
+  </div>
+</div>
+
+<script>
+  const COLORS = { SAFE: "var(--safe)", SUSPICIOUS: "var(--warn)", PHISHING: "var(--danger)" };
+  const LABELS = { SAFE: "✔ Looks safe", SUSPICIOUS: "⚠ Suspicious", PHISHING: "✖ Phishing" };
+  const $ = (id) => document.getElementById(id);
+
+  // All user-controlled text is inserted with textContent (never innerHTML) to prevent XSS.
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function renderHistory(items) {
+    const box = $("history");
+    box.replaceChildren();
+    if (!items.length) { box.append(el("div", "empty", "No URLs checked yet.")); return; }
+    for (const h of items) {
+      const row = el("div", "hist-row");
+      const dot = el("span", "dot"); dot.style.background = COLORS[h.verdict];
+      row.append(dot, el("span", "hist-url", h.url), el("span", "", h.risk + "%"), el("span", "empty", h.time));
+      box.append(row);
+    }
+  }
+
+  function render(r) {
+    $("result").style.display = "block";
+    $("verdict").className = "verdict " + r.verdict;
+    $("badge").textContent = LABELS[r.verdict];
+    $("checked-url").textContent = r.url;
+    $("risk").textContent = r.risk + "%";
+    $("fill").style.background = COLORS[r.verdict];
+    $("fill").style.width = "0";
+    requestAnimationFrame(() => $("fill").style.width = Math.max(r.risk, 2) + "%");
+
+    const ul = $("reasons"); ul.replaceChildren();
+    if (!r.reasons.length) ul.append(el("li", "", "No warning signs found in this URL."));
+    for (const reason of r.reasons) {
+      const li = el("li");
+      li.append(el("span", "lvl " + reason.level, reason.level), el("span", "", reason.text));
+      ul.append(li);
+    }
+
+    const table = $("features"); table.replaceChildren();
+    for (const [k, v] of Object.entries(r.features)) {
+      const tr = el("tr"); tr.append(el("td", "", k), el("td", "", String(v))); table.append(tr);
+    }
+    renderHistory(r.history);
+  }
+
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = $("url").value.trim();
+    $("error").textContent = "";
+    if (!url) { $("error").textContent = "Please enter a URL."; return; }
+    $("btn").disabled = true; $("btn").textContent = "Checking...";
+    try {
+      const res = await fetch("/api/check", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Request failed");
+      render(data);
+    } catch (err) {
+      $("error").textContent = err.message;
+    } finally {
+      $("btn").disabled = false; $("btn").textContent = "Check URL";
+    }
+  });
+
+  document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+    $("url").value = c.textContent; $("form").requestSubmit();
+  }));
+
+  fetch("/api/stats").then(r => r.json()).then(d => renderHistory(d.history)).catch(() => {});
+</script>
+</body>
+</html>
